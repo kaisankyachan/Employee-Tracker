@@ -1,0 +1,25 @@
+{
+  "name": "hw12",
+  "version": "1.0.0",
+  "description": "Employee Tracker is an application that allows the user to keep create, read, update, and delete data related to specific employees. When starting up the application the user has the option of viewing all employees, viewing employees by department, adding an employee, remove employees, add departments, and add roles. The program uses a MySQL database to store information for the user. When the user chooses an option the corresponding table appears in the terminal.",
+  "main": "index.js",
+  "dependencies": {
+    "console.table": "^0.10.0",
+    "inquirer": "^7.3.3",
+    "mysql": "^2.18.1"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaisankyachan/Employee-Tracker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kaisankyachan/Employee-Tracker/issues"
+  },
+  "homepage": "https://github.com/kaisankyachan/Employee-Tracker#readme"
+}
