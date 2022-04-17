@@ -1,7 +1,9 @@
+// set up the required mysql and inquirer components
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 require("console.table");
 
+// details for the mysql database connection
 const connection = mysql.createConnection({ 
   host: "localhost",
   port: "3306",
@@ -9,54 +11,57 @@ const connection = mysql.createConnection({
   password: "",
   database: "employee_trackerDB"
 })
-
+// connect to the database - if successful, show the main prompt
 connection.connect(function (err) {
   if (err) throw err;
   genesis();
 });
 
-// Startup prompt to ask what table the user wants to view/add
+
+//Run Genesis and show prompts
 function genesis(){
-  inquirer.prompt([
-  {
+  console.log("\ngenesis() invoked\n")
+  inquirer.prompt([{
     type: 'list',
+    pageSize: 15,
     name:'userChoice',
     message: 'What would you like to do?',
     choices: [
-    'View All Employees',
-    'View All Departments',
-    'View All Roles',
-    'Add Employee',
-    'Add Role',
-    'Add Department',
-    'Update Employee Role'
+      'View All Departments'
+      , 'View All Roles'
+      , 'View All Employees'
+      , 'Add Department'
+      , 'Add Role'
+      , 'Add Employee'
+      , 'Update Employee Role'
+      , 'Exit'
     ]
-      
-  }
-
-  ]).then((res)=>{
+  }]).then((res)=>{
     console.log(res.userChoice);
     switch(res.userChoice){
-      case 'View All Employees':
-        viewEmployee();
-        break;
       case 'View All Departments':
-        viewDept();
+        viewAllDepartments();
         break;
       case 'View All Roles':
-        viewRole();
+        viewAllRoles();
         break;
-      case 'Add Employee':
-        addEmployee();
-        break;
-      case 'Add Role':
-        addRole();
+      case 'View All Employees':
+        viewAllEmployees();
         break;
       case 'Add Department':
         addDepartment();
         break;
+      case 'Add Role':
+        addRole();
+        break;
+      case 'Add Employee':
+        addEmployee();
+        break;
       case 'Update Employee Role':
-        updateRole();
+        updateEmployeeRole();
+        break;
+      case 'Exit':
+        connection.end();
         break;
       }
     }).catch((err)=>{
@@ -64,44 +69,14 @@ function genesis(){
   });
 }
 
-
-
-//VIEWING
-
-// View All Employees
-function viewEmployee() {
+// Shows departments
+function viewAllDepartments(){
+  console.log("\nviewAllDepartments() invoked\n")
   let query = 
-  `SELECT 
-    employee.id, 
-    employee.first_name, 
-    employee.last_name, 
-    role.title, 
-    department.name AS department, 
-    role.salary, 
-    CONCAT(manager.first_name, ' ', manager.last_name) AS manager
-  FROM employee
-  LEFT JOIN role
-    ON employee.role_id = role.id
-  LEFT JOIN department
-    ON department.id = role.department_id
-  LEFT JOIN employee manager
-    ON manager.id = employee.manager_id`
-
-  connection.query(query, (err, res)=>{
-    if (err) throw err;
-    console.table(res);
-    genesis();
-  });
-}
-
-//View All Departments
-function viewDept(){
-  let query = 
-  `SELECT 
-    department.id, 
-    department.name
-  FROM department`
-
+    `SELECT 
+      department.id, 
+      department.name
+    FROM department`
   connection.query(query, (err, res)=>{
   if(err)throw err;
     console.table(res);
@@ -109,8 +84,9 @@ function viewDept(){
   });
 }
 
-//View All Roles
-function viewRole(){
+// Shows roles
+function viewAllRoles(){
+    console.log("\nviewAllRoles() invoked\n")
   let query = 
     `SELECT 
       role.id,
@@ -120,7 +96,6 @@ function viewRole(){
     FROM role
     JOIN department
       ON department.id = role.department_id`
-
   connection.query(query, (err, res)=>{
   if(err)throw err;
     console.table(res);
@@ -128,68 +103,56 @@ function viewRole(){
   });
 }
 
-
-//ADDING
-
-
-
-
-//Add An Employee
-function addEmployee() {
+// Shows roles
+function viewAllEmployees() {
+  console.log("\nviewAllEmployees() invoked\n")
   let query = 
-  `SELECT 
-    role.id, 
-    role.title, 
-    role.salary 
-  FROM role`
-
+    `SELECT 
+      employee.id, 
+      employee.first_name, 
+      employee.last_name, 
+      role.title, 
+      department.name AS department, 
+      role.salary, 
+      CONCAT(manager.first_name, ' ', manager.last_name) AS manager
+    FROM employee
+    LEFT JOIN role
+      ON employee.role_id = role.id
+    LEFT JOIN department
+      ON department.id = role.department_id
+    LEFT JOIN employee manager
+      ON manager.id = employee.manager_id`
   connection.query(query, (err, res)=>{
-    if(err)throw err;
-    const role = res.map(({ id, title, salary }) => ({
-      value: id, 
-      title: `${title}`, 
-      salary: `${salary}`
-    }));
-
+    if (err) throw err;
     console.table(res);
-    employeeRoles(role);
+    genesis();
   });
 }
 
-function employeeRoles(role) {
+//adds department
+function addDepartment(){
+  console.log("\naddDepartment() invoked\n")
   inquirer
     .prompt([
-    {
-      type: "input",
-      name: "firstName",
-      message: "Employee First Name: "
-    },
-    {
-      type: "input",
-      name: "lastName",
-      message: "Employee Last Name: "
-    },
-    {
-      type: "list",
-      name: "roleId",
-      message: "Employee Role: ",
-      choices: role
-    }
-  ]).then((res)=>{
-    let query = `INSERT INTO employee SET ?`
-    connection.query(query,{
-      first_name: res.firstName,
-      last_name: res.lastName,
-      role_id: res.roleId
-    },(err, res)=>{
+      {
+        type: "input",
+        name: "name",
+        pageSize: 15,
+        message: "Department Name: "
+      }
+    ]).then((res)=>{
+    let query = `INSERT INTO department SET ?`;
+    connection.query(query, {name: res.name},(err, res)=>{
       if(err) throw err;
+      viewAllDepartments();
       genesis();
     });
   });
 }
 
-//Add Role
+// adds role
 function addRole(){
+    console.log("\naddRole() invoked\n")
   var query = 
   `SELECT 
     department.id, 
@@ -214,6 +177,7 @@ function addRole(){
 }
   
 function addToRole(department){
+    console.log("\naddToRole(department) invoked\n")
     inquirer
       .prompt([
         {
@@ -229,6 +193,7 @@ function addToRole(department){
         {
           type: "list",
           name: "department",
+          pageSize: 15,
           message: "Department: ",
           choices: department
         }
@@ -241,53 +206,86 @@ function addToRole(department){
             department_id: res.department
         },(err, res)=>{
             if(err) throw err;
+            viewAllRoles();
             genesis();
         });
     });
 }
 
-//Add Department
-function addDepartment(){
+//adds employee
+function addEmployee() {
+    console.log("\naddEmployee() invoked\n")
+  let query = 
+    `SELECT 
+      role.id, 
+      role.title, 
+      role.salary 
+    FROM role`
+  connection.query(query, (err, res)=>{
+    if(err)throw err;
+    const role = res.map(({ id, title, salary }) => ({
+      value: id, 
+      title: `${title}`, 
+      salary: `${salary}`
+    }));
+    console.table(res);
+    employeeRoles(role);
+  });
+}
+
+function employeeRoles(role) {
+  console.log("\nemployeeRoles(role) invoked\n")
   inquirer
     .prompt([
-      {
-        type: "input",
-        name: "name",
-        message: "Department Name: "
-      }
-    ]).then((res)=>{
-    let query = `INSERT INTO department SET ?`;
-    connection.query(query, {name: res.name},(err, res)=>{
+    {
+      type: "input",
+      name: "firstName",
+      message: "Employee First Name: "
+    },
+    {
+      type: "input",
+      name: "lastName",
+      message: "Employee Last Name: "
+    },
+    {
+      type: "list",
+      name: "roleId",
+      pageSize: 15,
+      message: "Employee Role: ",
+      choices: role
+    }
+  ]).then((res)=>{
+    let query = `INSERT INTO employee SET ?`
+    connection.query(query,{
+      first_name: res.firstName,
+      last_name: res.lastName,
+      role_id: res.roleId
+    },(err, res)=>{
       if(err) throw err;
       genesis();
     });
   });
 }
 
-
-
-
-//UPDATE
-
-//UPDATE EMPLOYEE ROLE
-function updateRole(){
+// updates employee
+function updateEmployeeRole(){
+  console.log("\nupdateEmployeeRole() invoked\n")
   var query = 
-  `SELECT 
-    employee.id,
-    employee.first_name, 
-    employee.last_name, 
-    role.title, 
-    department.name, 
-    role.salary, 
-    CONCAT(manager.first_name, ' ', manager.last_name) AS manager
-  FROM employee
-  JOIN role
-    ON employee.role_id = role.id
-  JOIN department
-    ON department.id = role.department_id
-  JOIN employee manager
-    ON manager.id = employee.manager_id`
-
+    `SELECT 
+      employee.id,
+      employee.first_name, 
+      employee.last_name, 
+      role.title, 
+      department.name, 
+      role.salary, 
+      CONCAT(manager.first_name, ' ', manager.last_name) AS manager
+    FROM employee
+    JOIN role
+      ON employee.role_id = role.id
+    JOIN department
+      ON department.id = role.department_id
+    LEFT JOIN employee manager
+      ON manager.id = employee.manager_id`
   connection.query(query,(err, res)=>{
     if(err)throw err;
     const employeeChoices = res.map(({ id, first_name, last_name }) => ({
@@ -295,52 +293,55 @@ function updateRole(){
       name: `${first_name} ${last_name}`      
     }));
     console.table(res);
-    console.log("employeeChoices to Update!\n")
-    updateRole(employeeChoices);
+    updateTheRoleAssignedToTheEmployee(employeeChoices);
   });
 }
 
-function updateRole(employeeChoices){
-let query = 
-`SELECT 
-  role.id, 
-  role.title, 
-  role.salary 
-FROM role`
-
-connection.query(query,(err, res)=>{
-  if(err)throw err;
-  let roleChoices = res.map(({ id, title, salary }) => ({
-    value: id, 
-    title: `${title}`, 
-    salary: `${salary}`      
-  }));
-  console.table(res);
-  getUpdatedRole(employeeChoices, roleChoices);
-});
+function updateTheRoleAssignedToTheEmployee(employeeChoices){
+  console.log("\nupdateTheRoleAssignedToTheEmployee(employeeChoices) invoked\n")
+  let query = 
+    `SELECT 
+      role.id, 
+      role.title, 
+      role.salary 
+    FROM role`
+  
+  connection.query(query,(err, res)=>{
+    if(err)throw err;
+    let roleChoices = res.map(({ id, title, salary }) => ({
+      value: id, 
+      title: `${title}`, 
+      salary: `${salary}`      
+    }));
+    console.table(res);
+    getTheRoleToAssignToTheEmployee(employeeChoices, roleChoices);
+  });
 }
 
-function getUpdatedRole(employeeChoices, roleChoices) {
-inquirer
-  .prompt([
-    {
-      type: "list",
-      name: "employee",
-      message: `Employee who's role will be Updated: `,
-      choices: employeeChoices
-    },
-    {
-      type: "list",
-      name: "role",
-      message: "Select New Role: ",
-      choices: roleChoices
-    }
-
-  ]).then((res)=>{
-    let query = `UPDATE employee SET role_id = ? WHERE id = ?`
-    connection.query(query,[ res.role, res.employee],(err, res)=>{
+function getTheRoleToAssignToTheEmployee(employeeChoices, roleChoices) {
+  console.log("\ngetTheRoleToAssignToTheEmployee(employeeChoices, roleChoices) invoked\n")
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "employee",
+        pageSize: 15,
+        message: "Employee who's role will be Updated: ",
+        choices: employeeChoices
+      },
+      {
+        type: "list",
+        name: "role",
+        pageSize: 15,
+        message: "Select New Role: ",
+        choices: roleChoices
+      }
+    ]).then((res)=>{
+      let query = `UPDATE employee SET role_id = ? WHERE id = ?`
+      connection.query(query,[ res.role, res.employee],(err, res)=>{
         if(err)throw err;
+        viewAllEmployees();
         genesis();
       });
-  });
+    });
 }
